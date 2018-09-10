@@ -1,0 +1,13 @@
+{
+  "reason.format.width": 120,
+  "reason.codelens.enabled": true,
+  "reason.diagnostics.tools": ["bsb"],
+  "reason_language_server.per_value_codelens": true,
+  "reason_language_server.format_width": 120,
+  "editor.rulers": [120],
+  "editor.tabSize": 2,
+  "files.exclude": {
+    "**/*.bs.js": true
+  },
+  "files.insertFinalNewline": true
+}

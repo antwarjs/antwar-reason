@@ -1,0 +1,12 @@
+# node.js
+#
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# BuckleScript
+/lib
+/types
+*.bs.js
+.merlin
+.bsb.lock
