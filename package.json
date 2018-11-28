@@ -4,14 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "bsbBuild": "bsb -make-world -clean-world",
-    "bsbWatch": "bsb -make-world -clean-world -w",
+    "build": "node ./scripts/gentype-bsb -make-world",
+    "watch": "node ./scripts/gentype-bsb -make-world -w",
+    "clean": "bsb -clean-world",
+    "test:start": "cd test && npm run start",
+    "test:clean-build": "cd test && npm run clean-build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "bs-platform": "^4.0.5"
+  "dependencies": {},
+  "devDependencies": {
+    "bs-platform": "^4.0.6",
+    "gentype": "^1.0.0",
+    "reason-react": "github:reasonml/reason-react#6d2d965"
   }
 }

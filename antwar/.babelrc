@@ -1,0 +1,17 @@
+{
+  "presets": [
+    [
+      "env",
+      {
+        "targets": {
+          "node": "9.5"
+        }
+      }
+    ],
+    "react"
+  ],
+  "plugins": [
+    "syntax-object-rest-spread",
+    "transform-object-rest-spread"
+  ]
+}
