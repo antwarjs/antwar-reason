@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "antwar:build": "cd antwar && npm run build",
     "build": "node ./scripts/gentype-bsb -make-world",
     "watch": "node ./scripts/gentype-bsb -make-world -w",
     "clean": "bsb -clean-world",
