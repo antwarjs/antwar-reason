@@ -25,11 +25,11 @@ let make = (~_location: location/*, ~_file: file*/, children) => {
   ...component,
   render: _self => {
     <div className="root">
-      /*<Interactive*/
+      /* <Interactive */
         /*id="components/InteractiveNavigation.gen.js"*/
         /*container={<InteractiveNavigation location />}*/
         /*props={"location": location}*/
-      /*/>*/
+      /* />*/
       <main>
         <Bar/>
         children

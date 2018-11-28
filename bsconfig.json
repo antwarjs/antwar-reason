@@ -5,6 +5,7 @@
   "refmt": 3,
   "bs-dependencies": ["reason-react"],
   "sources": [
+    { "dir": "antwar/src", "subdirs": true},
     { "dir": "src", "subdirs": true },
     {
       "dir": "test",
