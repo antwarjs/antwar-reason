@@ -2,15 +2,19 @@ type url_path = list(string);
 
 module Util = {
   let concatUrlPath = (urlPath: url_path): string =>
-    List.fold_left(
-      (acc, str) =>
-        switch (acc) {
-        | "" => str
-        | _ => "/" ++ str
-        },
-      "",
-      urlPath,
-    );
+    switch (urlPath) {
+    | [] => "/"
+    | _ =>
+      List.fold_left(
+        (acc, str) =>
+          switch (acc) {
+          | "" => str
+          | _ => "/" ++ str
+          },
+        "",
+        urlPath,
+      )
+    };
 };
 
 module ReactComponent = {
@@ -47,14 +51,6 @@ module Compiler = (Component: {type t;}) => {
   let compilePage = (compileUnit: compileUnit, compiler: t): unit => ();
 };
 
-/*module type RouterSig => {*/
-/*let routeToPath: route => url_path;*/
-/*let pathToRoute: url_path => route;*/
-
-/*let urlPathToStr: url_path => string;*/
-/*let href: (~to_: route) => string;*/
-/*};*/
-
 module ReactCompiler = {
   include Compiler(ReactComponent);
 
@@ -74,6 +70,7 @@ module Pages = {
       | Index
       | About
       | NotFound;
+
     let urlPathToStr = Util.concatUrlPath;
 
     let pathToRoute = urlPath =>
@@ -85,7 +82,7 @@ module Pages = {
 
     let routeToPath = route =>
       switch (route) {
-      | Index => [""]
+      | Index => []
       | About => ["about"]
       };
 
@@ -107,13 +104,11 @@ module Pages = {
 
 let applyLayout = children => <main> children </main>;
 
-module AppliedCompiler = ReactCompiler;
-
 module Transform = {
-  let identity: AppliedCompiler.transform =
+  let identity: ReactCompiler.transform =
     (~index as _, compileUnit) => compileUnit;
 
-  let layout: AppliedCompiler.transform =
+  let layout: ReactCompiler.transform =
     (~index as _, compileUnit) => {
       let (path, component) = compileUnit;
 
@@ -128,13 +123,13 @@ module Transform = {
     };
 };
 
-let config: list(AppliedCompiler.compileUnit) = [
+let config: list(ReactCompiler.compileUnit) = [
   ([], Pages.index),
   (["about"], Pages.about),
 ];
 
 let compiler =
-  AppliedCompiler.make(
+  ReactCompiler.make(
     ~buildDir="foo",
     ~processComponent=comp => ReactDOMServerRe.renderToStaticMarkup(comp),
     (),
@@ -142,6 +137,4 @@ let compiler =
 
 config
 |> List.mapi((index, compileUnit) => Transform.layout(~index, compileUnit))
-|> List.iter(compileUnit =>
-     AppliedCompiler.compilePage(compileUnit, compiler)
-   );
+|> List.iter(compileUnit => ReactCompiler.compilePage(compileUnit, compiler));
