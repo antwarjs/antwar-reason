@@ -1,6 +1,5 @@
-open Common;
-
 module Make = (Component: {type t;}, Fs: Filesystem.T) => {
+  type url_path = UrlPath.t;
   type component = Component.t;
   type compileUnit = (url_path, component);
   type transform = (~index: int, compileUnit) => compileUnit;
@@ -11,15 +10,19 @@ module Make = (Component: {type t;}, Fs: Filesystem.T) => {
     processComponent: component => string /* maybe Html_string.t? */
   };
 
-  let defaultMapUrlToFile = Util.concatUrlPath;
-
-  let defaultProcessComponent = (_component: component) => "";
+  /*
+      [] => "index.html"
+      ["about"] => "about/index.html"
+      ["about", "2"] => "about/2/index.html"
+   */
+  let defaultMapUrlToFile = urlPath =>
+    Path.(join([join(urlPath)] @ ["index.html"]));
 
   let make =
       (
         ~buildDir,
         ~mapUrlToFile=defaultMapUrlToFile,
-        ~processComponent=defaultProcessComponent,
+        ~processComponent=_ => "",
         (),
       ) => {
     buildDir,
@@ -30,10 +33,15 @@ module Make = (Component: {type t;}, Fs: Filesystem.T) => {
   let setup = ({buildDir}: t): unit => Fs.mkdirp(buildDir);
 
   let compilePage = (compiler: t, compileUnit: compileUnit): unit => {
-    let {processComponent} = compiler;
-    let (path, component) = compileUnit;
+    let {buildDir, processComponent, mapUrlToFile} = compiler;
+    let (urlPath, component) = compileUnit;
 
-    processComponent(component) |> Fs.writeFile(~filepath="");
+    let filepath = Path.(join([buildDir, mapUrlToFile(urlPath)]));
+
+    let content = processComponent(component);
+
+    Fs.mkdirp(Path.dirname(filepath));
+    Fs.writeFile(~filepath, content);
   };
 
   let compileAll = (compiler: t, input: array(compileUnit)): unit => {

@@ -1,6 +1,6 @@
-open Common;
+type t = list(string);
 
-let concatUrlPath = (urlPath: url_path): string =>
+let toUrl = (urlPath: t): string =>
   switch (urlPath) {
   | [] => "/"
   | _ =>
@@ -13,4 +13,11 @@ let concatUrlPath = (urlPath: url_path): string =>
       "",
       urlPath,
     )
+  };
+
+
+let toFilepath = (urlPath: t): string =>
+  switch (List.rev(urlPath)) {
+  | [name, ..._rest] => name ++ ".html"
+  | _ => "index.html"
   };

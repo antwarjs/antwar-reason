@@ -1,5 +1,3 @@
-open Common;
-
 module Pages = {
   module Router = {
     type route =
@@ -7,7 +5,7 @@ module Pages = {
       | About
       | NotFound;
 
-    let urlPathToStr = Util.concatUrlPath;
+    let urlPathToStr = UrlPath.toUrl;
 
     let pathToRoute = urlPath =>
       switch (urlPath) {
@@ -61,16 +59,17 @@ module ReactCompiler = {
     type t = ReasonReact.reactElement;
   };
   include Compiler.Make(Component, Filesystem.Node);
+  /*include Compiler.Make(Component, Filesystem.Console);*/
 };
 
 let config: list(ReactCompiler.compileUnit) = [
   ([], Pages.index),
-  (["about"], Pages.about),
+  (["about", "1"], Pages.about),
 ];
 
 let compiler =
   ReactCompiler.make(
-    ~buildDir="foo",
+    ~buildDir=Path.join([Sys.getcwd(), "build"]),
     ~processComponent=comp => ReactDOMServerRe.renderToStaticMarkup(comp),
     (),
   );
