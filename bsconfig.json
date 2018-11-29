@@ -5,26 +5,14 @@
   "refmt": 3,
   "bs-dependencies": ["reason-react"],
   "sources": [
-    { "dir": "antwar/src", "subdirs": true},
-    { "dir": "src", "subdirs": true },
-    {
-      "dir": "test",
-      "subdirs": [
-        "common",
-        "pages",
-        "components",
-        "bindings",
-        "utils",
-        "layouts"
-      ]
-    }
+    { "dir": "src", "subdirs": true }
   ],
   "package-specs": {
     "module": "commonjs",
     "in-source": true
   },
   "suffix": ".bs.js",
-  "bsc-flags": ["-bs-no-version-header", "-bs-super-errors", "-bs-g"],
+  "bsc-flags": ["-bs-no-version-header", "-bs-super-errors", "-bs-g", "-w @8"],
   "gentypeconfig": {
     "language": "untyped",
     "shims": []

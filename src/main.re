@@ -1,68 +1,4 @@
-type url_path = list(string);
-
-module Util = {
-  let concatUrlPath = (urlPath: url_path): string =>
-    switch (urlPath) {
-    | [] => "/"
-    | _ =>
-      List.fold_left(
-        (acc, str) =>
-          switch (acc) {
-          | "" => str
-          | _ => "/" ++ str
-          },
-        "",
-        urlPath,
-      )
-    };
-};
-
-module ReactComponent = {
-  type t = ReasonReact.reactElement;
-};
-
-module Compiler = (Component: {type t;}) => {
-  /* (["about", "1"], hello) */
-  type compileUnit = (url_path, Component.t);
-  type transform = (~index: int, compileUnit) => compileUnit;
-
-  type t = {
-    buildDir: string,
-    mapUrlToFile: url_path => string,
-    processComponent: Component.t => string /* maybe Html_string.t? */
-  };
-
-  let defaultMapUrlToFile = Util.concatUrlPath;
-
-  let defaultProcessComponent = (component: Component.t) => "";
-
-  let make =
-      (
-        ~buildDir,
-        ~mapUrlToFile=defaultMapUrlToFile,
-        ~processComponent=defaultProcessComponent,
-        (),
-      ) => {
-    buildDir,
-    mapUrlToFile,
-    processComponent,
-  };
-
-  let compilePage = (compileUnit: compileUnit, compiler: t): unit => ();
-};
-
-module ReactCompiler = {
-  include Compiler(ReactComponent);
-
-  let a: compileUnit = (["test"], <div />);
-
-  let compilePage = (compileUnit: compileUnit, compiler: t): unit => {
-    let {processComponent} = compiler;
-    let (_path, component) = compileUnit;
-
-    processComponent(component) |> Js.log;
-  };
-};
+open Common;
 
 module Pages = {
   module Router = {
@@ -84,6 +20,7 @@ module Pages = {
       switch (route) {
       | Index => []
       | About => ["about"]
+      | NotFound => ["404"]
       };
 
     let href = (~to_: route): string => routeToPath(to_) |> urlPathToStr;
@@ -105,22 +42,25 @@ module Pages = {
 let applyLayout = children => <main> children </main>;
 
 module Transform = {
-  let identity: ReactCompiler.transform =
-    (~index as _, compileUnit) => compileUnit;
+  let layout = (~index as _, compileUnit) => {
+    let (path, component) = compileUnit;
 
-  let layout: ReactCompiler.transform =
-    (~index as _, compileUnit) => {
-      let (path, component) = compileUnit;
+    let applied =
+      switch (path) {
+      | ["about", "1"] => applyLayout(component)
+      | ["about", _] => applyLayout(<div id="1"> component </div>)
+      | _ => applyLayout(component)
+      };
 
-      let applied =
-        switch (path) {
-        | ["about", "1"] => applyLayout(component)
-        | ["about", _] => applyLayout(<div id="1"> component </div>)
-        | _ => applyLayout(component)
-        };
+    (path, applied);
+  };
+};
 
-      (path, applied);
-    };
+module ReactCompiler = {
+  module Component = {
+    type t = ReasonReact.reactElement;
+  };
+  include Compiler.Make(Component, Filesystem.Node);
 };
 
 let config: list(ReactCompiler.compileUnit) = [
@@ -137,4 +77,5 @@ let compiler =
 
 config
 |> List.mapi((index, compileUnit) => Transform.layout(~index, compileUnit))
-|> List.iter(compileUnit => ReactCompiler.compilePage(compileUnit, compiler));
+|> Array.of_list
+|> ReactCompiler.compileAll(compiler);
