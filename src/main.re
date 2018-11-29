@@ -2,7 +2,7 @@ module Pages = {
   module Router = {
     type route =
       | Index
-      | About
+      | About(string)
       | NotFound;
 
     let urlPathToStr = UrlPath.toUrl;
@@ -10,14 +10,14 @@ module Pages = {
     let pathToRoute = urlPath =>
       switch (urlPath) {
       | [] => Index
-      | ["about", _] => About
+      | ["about", sub] => About(sub)
       | _ => NotFound
       };
 
     let routeToPath = route =>
       switch (route) {
       | Index => []
-      | About => ["about"]
+      | About(sub) => ["about", sub]
       | NotFound => ["404"]
       };
 
@@ -33,7 +33,7 @@ module Pages = {
   let index =
     <div>
       <div> "Home"->ReasonReact.string </div>
-      <a href=Router.(href(~to_=About))> "About"->ReasonReact.string </a>
+      <a href=Router.(href(~to_=About("1")))> "About"->ReasonReact.string </a>
     </div>;
 };
 
