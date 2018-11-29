@@ -71,6 +71,4 @@ build
 **/*.gen.js
 lib/
 .vscode/
-
-# Antwar
-antwar/dist
+src/test.re
