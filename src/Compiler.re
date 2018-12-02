@@ -4,8 +4,7 @@ module Make = (Component: {type t;}, Fs: Filesystem.T) => {
   type url_path = UrlPath.t;
   type component = Component.t;
 
-  type compileUnit = (url_path, component);
-  type transform = (~index: int, compileUnit) => compileUnit;
+  type transform = (~index: int, CompileUnit.t) => CompileUnit.t;
 
   type t = {
     buildDir: string,
