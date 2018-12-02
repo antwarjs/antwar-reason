@@ -72,3 +72,5 @@ build
 lib/
 .vscode/
 src/test.re
+
+bundle/
