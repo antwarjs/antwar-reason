@@ -68,8 +68,11 @@ module ReactCompiler = {
   include Compiler.Make(Component, Filesystem.Node);
 
   module Transform = {
-    let template = (~index as _, compileUnit: CompileUnit.t) => {};
+    let template = (~index as _, compileUnit: CompileUnit.t) => "";
   };
+
+  let processComponent = (comp: Component.t) =>
+    ReactDOMServerRe.renderToStaticMarkup(comp);
 };
 
 let config: list(ReactCompiler.CompileUnit.t) = [
@@ -78,12 +81,7 @@ let config: list(ReactCompiler.CompileUnit.t) = [
   Page({urlPath: ["about"], component: Pages.about}),
 ];
 
-let compiler =
-  ReactCompiler.make(
-    ~buildDir=Path.join([Sys.getcwd(), "build"]),
-    ~processComponent=comp => ReactDOMServerRe.renderToStaticMarkup(comp),
-    (),
-  );
+let compiler = ReactCompiler.make();
 
 /*config*/
 /*|> List.mapi((index, compileUnit) =>*/

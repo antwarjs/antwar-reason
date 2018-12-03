@@ -63,7 +63,6 @@ typings/
 # Other
 .DS_Store
 .antwar
-build
 .bsb.lock
 .genTypeLog
 .merlin
@@ -73,4 +72,6 @@ lib/
 .vscode/
 src/test.re
 
+build/
 bundle/
+

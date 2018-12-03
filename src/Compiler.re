@@ -1,6 +1,22 @@
 module Make = (Component: {type t;}, Fs: Filesystem.T) => {
   module CompileUnit = CompileUnit.Make(Component);
 
+  module BundleResult = {
+    type result =
+      | Ok
+      | Error(string);
+
+    type t = {
+      bundle: CompileUnit.bundle,
+      outputFile: string,
+      result,
+    };
+
+    let compare = (r1, r2) => Pervasives.compare(r1.bundle.id, r2.bundle.id);
+  };
+
+  module BundleResultSet = Set.Make(BundleResult);
+
   type url_path = UrlPath.t;
   type component = Component.t;
 
@@ -8,8 +24,7 @@ module Make = (Component: {type t;}, Fs: Filesystem.T) => {
 
   type t = {
     buildDir: string,
-    mapUrlToFile: url_path => string,
-    processComponent: component => string /* maybe Html_string.t? */
+    bundleDir: string,
   };
 
   /*
@@ -17,25 +32,25 @@ module Make = (Component: {type t;}, Fs: Filesystem.T) => {
       ["about"] => "about/index.html"
       ["about", "2"] => "about/2/index.html"
    */
-  let defaultMapUrlToFile = urlPath =>
+  let mapUrlToFile = (urlPath: UrlPath.t) =>
     Path.(join([join(urlPath)] @ ["index.html"]));
+
+  let processComponent = (comp: Component.t) => "";
 
   let make =
       (
-        ~buildDir,
-        ~mapUrlToFile=defaultMapUrlToFile,
-        ~processComponent=_ => "",
+        ~buildDir=Path.join([Sys.getcwd(), "build"]),
+        ~bundleDir=Path.join([Sys.getcwd(), "bundle"]),
         (),
       ) => {
     buildDir,
-    mapUrlToFile,
-    processComponent,
+    bundleDir,
   };
 
   let setup = ({buildDir}: t): unit => Fs.mkdirp(buildDir);
 
   let compilePage = (compiler: t, page: CompileUnit.page): unit => {
-    let {buildDir, processComponent, mapUrlToFile} = compiler;
+    let {buildDir} = compiler;
     let {CompileUnit.urlPath, component} = page;
 
     let filepath = Path.(join([buildDir, mapUrlToFile(urlPath)]));
@@ -47,9 +62,8 @@ module Make = (Component: {type t;}, Fs: Filesystem.T) => {
   };
 
   let compileBundle =
-      (compiler: t, bundle: CompileUnit.bundle)
-      : Js.Promise.t(Js.Result.t(string, string)) => {
-    let {buildDir} = compiler;
+      (compiler: t, bundle: CompileUnit.bundle): Js.Promise.t(BundleResult.t) => {
+    let {buildDir, bundleDir} = compiler;
     let {CompileUnit.id, entry} = bundle;
 
     /*
@@ -57,14 +71,15 @@ module Make = (Component: {type t;}, Fs: Filesystem.T) => {
         capable to output a different filename than `index.js`
         See: https://github.com/fastpack/fastpack/issues/145
      */
-    let outputDir = Path.(join([buildDir, id]));
+    let outputDir = Path.join([bundleDir, id]);
+    let outputFile = Path.join([outputDir, "index.js"]);
 
     Bundler.Fastpack.(
       make(
         ~entry="./site/app.bs.js",
         ~task=Build,
         ~dev=true,
-        ~output="./build/foo",
+        ~output=outputDir,
         ~preprocess=[
           "\\.css$:style-loader!css-loader?importLoaders=1!postcss-loader?path=./postcss.config.js",
         ],
@@ -72,22 +87,23 @@ module Make = (Component: {type t;}, Fs: Filesystem.T) => {
       )
       |> exec
       |> Js.Promise.then_(code =>
-           if (code === 0) {
-             Js.log(
-               "Building bundle '"
-               ++ Path.join([outputDir, "index.js"])
-               ++ "' successful",
-             );
-             Js.Promise.resolve(Js.Result.Ok(id));
-           } else {
-             Js.log("Building bundle '" ++ id ++ "' failed");
-             Js.Promise.resolve(Js.Result.Error(id));
-           }
+           (
+             switch (code) {
+             | 0 => {BundleResult.bundle, outputFile, result: Ok}
+             | _ => {
+                 BundleResult.bundle,
+                 outputFile,
+                 result: Error("Building bundle '" ++ id ++ "' failed"),
+               }
+             }
+           )
+           |> Js.Promise.resolve
          )
     );
   };
 
-  let compileAll = (compiler: t, input: list(CompileUnit.t)): Js.Promise.t(unit) => {
+  let compileAll =
+      (compiler: t, input: list(CompileUnit.t)): Js.Promise.t(unit) => {
     setup(compiler);
 
     /* Steps to do
@@ -113,8 +129,32 @@ module Make = (Component: {type t;}, Fs: Filesystem.T) => {
     List.map(bundle => compileBundle(compiler, bundle), bundles)
     |> Array.of_list
     |> Js.Promise.all
-    |> Js.Promise.then_(results => {
-         Js.log(results);
+    |> Js.Promise.then_(results =>
+         Array.to_list(results)
+         |> BundleResultSet.of_list
+         |> Js.Promise.resolve
+       )
+    |> Js.Promise.then_(bundleResults => {
+         Js.log("Bundle Builds:\n--------------------");
+         BundleResultSet.iter(
+           bundleResult => {
+             open CompileUnit;
+             open BundleResult;
+
+             let {id} = bundleResult.bundle;
+             let {outputFile} = bundleResult;
+
+             let result =
+               switch (bundleResult.result) {
+               | Ok => "OK"
+               | Error(_) => "FAILED"
+               };
+
+             Js.log({j|$id \t - $outputFile \t [$result]|j});
+           },
+           bundleResults,
+         );
+
          Js.Promise.resolve();
        });
     /*let compile = compilePage(compiler);*/
