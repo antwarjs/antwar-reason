@@ -83,11 +83,4 @@ let config: list(ReactCompiler.CompileUnit.t) = [
 
 let compiler = ReactCompiler.make();
 
-/*config*/
-/*|> List.mapi((index, compileUnit) =>*/
-/*Transform.template(~index, compileUnit)*/
-/*)*/
-/*|> Array.of_list*/
-/*|> ReactCompiler.compileAll(compiler);*/
-
 config |> ReactCompiler.compileAll(compiler);

@@ -26,6 +26,7 @@ module Fastpack = {
         ~dev=true,
         ~entry: string,
         ~output="./bundle",
+        ~name="index.js",
         ~preprocess: list(string)=[],
         (),
       )
@@ -38,9 +39,10 @@ module Fastpack = {
       };
 
     let addArg = arg => Js.Array.push(arg, args) |> ignore;
-    let addArgs = (more: list(string)) => List.iter(arg => addArg(arg), more);
+    let addArgs = (more: list(string)) =>
+      List.iter(arg => addArg(arg), more);
 
-    addArgs([taskToStr(task), entry]);
+    addArgs([taskToStr(task), entry, "-n " ++ name]);
 
     if (dev) {
       addArg("--development");

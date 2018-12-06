@@ -71,15 +71,16 @@ module Make = (Component: {type t;}, Fs: Filesystem.T) => {
         capable to output a different filename than `index.js`
         See: https://github.com/fastpack/fastpack/issues/145
      */
-    let outputDir = Path.join([bundleDir, id]);
-    let outputFile = Path.join([outputDir, "index.js"]);
+    let bundleFileName = id ++ ".js";
+    let outputFile = Path.join([bundleDir, bundleFileName]);
 
     Bundler.Fastpack.(
       make(
         ~entry="./site/app.bs.js",
         ~task=Build,
         ~dev=true,
-        ~output=outputDir,
+        ~output=bundleDir,
+        ~name=bundleFileName,
         ~preprocess=[
           "\\.css$:style-loader!css-loader?importLoaders=1!postcss-loader?path=./postcss.config.js",
         ],
