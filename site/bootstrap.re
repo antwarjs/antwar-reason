@@ -16,6 +16,7 @@ module Router = {
   let routeToPath = route =>
     switch (route) {
     | Index => []
+    | About("") => ["about"]
     | About(sub) => ["about", sub]
     | NotFound => ["404"]
     };
@@ -33,7 +34,7 @@ module Pages = {
   let index =
     <div>
       <div> "Home"->ReasonReact.string </div>
-      <a href=Router.(href(~to_=About("1")))>
+      <a href=Router.(href(~to_=About("")))>
         "About"->ReasonReact.string
       </a>
     </div>;
@@ -63,6 +64,9 @@ module Transform = {
 module ReactCompiler = {
   module Component = {
     type t = ReasonReact.reactElement;
+
+    let processComponent = (comp: t) =>
+      ReactDOMServerRe.renderToStaticMarkup(comp);
   };
 
   include Compiler.Make(Component, Filesystem.Node);
@@ -70,9 +74,6 @@ module ReactCompiler = {
   module Transform = {
     let template = (~index as _, compileUnit: CompileUnit.t) => "";
   };
-
-  let processComponent = (comp: Component.t) =>
-    ReactDOMServerRe.renderToStaticMarkup(comp);
 };
 
 let config: list(ReactCompiler.CompileUnit.t) = [

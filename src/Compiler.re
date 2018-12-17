@@ -1,4 +1,12 @@
-module Make = (Component: {type t;}, Fs: Filesystem.T) => {
+module Make =
+       (
+         Component: {
+           type t;
+
+           let processComponent: t => string;
+         },
+         Fs: Filesystem.T,
+       ) => {
   module CompileUnit = CompileUnit.Make(Component);
 
   module BundleResult = {
@@ -35,12 +43,10 @@ module Make = (Component: {type t;}, Fs: Filesystem.T) => {
   let mapUrlToFile = (urlPath: UrlPath.t) =>
     Path.(join([join(urlPath)] @ ["index.html"]));
 
-  let processComponent = (comp: Component.t) => "";
-
   let make =
       (
         ~buildDir=Path.join([Sys.getcwd(), "build"]),
-        ~bundleDir=Path.join([Sys.getcwd(), "bundle"]),
+        ~bundleDir=Path.join([Sys.getcwd(), "build/bundle"]),
         (),
       ) => {
     buildDir,
@@ -55,7 +61,7 @@ module Make = (Component: {type t;}, Fs: Filesystem.T) => {
 
     let filepath = Path.(join([buildDir, mapUrlToFile(urlPath)]));
 
-    let content = processComponent(component);
+    let content = Component.processComponent(component);
 
     Fs.mkdirp(Path.dirname(filepath));
     Fs.writeFile(~filepath, content);
@@ -76,7 +82,7 @@ module Make = (Component: {type t;}, Fs: Filesystem.T) => {
 
     Bundler.Fastpack.(
       make(
-        ~entry="./site/app.bs.js",
+        ~entry,
         ~task=Build,
         ~dev=true,
         ~output=bundleDir,
@@ -127,6 +133,17 @@ module Make = (Component: {type t;}, Fs: Filesystem.T) => {
         input,
       );
 
+    let pages =
+      List.fold_left(
+        (ret, next) =>
+          switch (next) {
+          | CompileUnit.Page(page) => [page, ...ret]
+          | _ => ret
+          },
+        [],
+        input,
+      );
+
     List.map(bundle => compileBundle(compiler, bundle), bundles)
     |> Array.of_list
     |> Js.Promise.all
@@ -155,6 +172,8 @@ module Make = (Component: {type t;}, Fs: Filesystem.T) => {
            },
            bundleResults,
          );
+
+         List.iter(page => compilePage(compiler, page), pages);
 
          Js.Promise.resolve();
        });
